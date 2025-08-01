@@ -12,7 +12,7 @@ if [ -d "output" ] && [ "$(ls -A output/*.ssz 2>/dev/null)" ]; then
     mv output/*.ssz .
     
     echo "Committing and pushing to GitHub..."
-    git add *.ssz
+    git add -f *.ssz
     git commit -m "Add BAL blocks $(date +'%Y-%m-%d %H:%M:%S UTC')"
     git push
     
