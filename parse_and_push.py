@@ -206,24 +206,70 @@ def main():
     # Get existing blocks from GitHub
     existing_blocks = get_existing_blocks_from_github()
     
-    # Find blocks to parse (work backwards from latest)
     blocks_to_parse = []
-    for block_num in range(latest_block, latest_block - 100, -1):  # Check last 100 blocks
-        if block_num not in existing_blocks:
-            blocks_to_parse.append(block_num)
-        if len(blocks_to_parse) >= MAX_BLOCKS_PER_RUN:
-            break
+    
+    if not existing_blocks:
+        # No existing blocks - start from latest and work backwards
+        print("No existing blocks found. Starting from latest block.")
+        for i in range(MAX_BLOCKS_PER_RUN):
+            block_num = latest_block - i
+            if block_num >= 0:
+                blocks_to_parse.append(block_num)
+    else:
+        # Find the highest block we have
+        highest_existing = max(existing_blocks)
+        print(f"Highest existing block: {highest_existing}")
+        
+        # First priority: fill gap between highest existing and latest
+        if highest_existing < latest_block:
+            for block_num in range(latest_block, highest_existing, -1):
+                if block_num not in existing_blocks:
+                    blocks_to_parse.append(block_num)
+                if len(blocks_to_parse) >= MAX_BLOCKS_PER_RUN:
+                    break
+        
+        # Second priority: fill any gaps in existing blocks
+        if len(blocks_to_parse) < MAX_BLOCKS_PER_RUN:
+            # Find gaps by checking continuity
+            sorted_existing = sorted(existing_blocks, reverse=True)
+            for i in range(len(sorted_existing) - 1):
+                current = sorted_existing[i]
+                next_block = sorted_existing[i + 1]
+                
+                # If there's a gap
+                if current - next_block > 1:
+                    # Fill the gap
+                    for block_num in range(current - 1, next_block, -1):
+                        if block_num not in existing_blocks:
+                            blocks_to_parse.append(block_num)
+                        if len(blocks_to_parse) >= MAX_BLOCKS_PER_RUN:
+                            break
+                
+                if len(blocks_to_parse) >= MAX_BLOCKS_PER_RUN:
+                    break
+        
+        # Third priority: continue backwards from lowest existing
+        if len(blocks_to_parse) < MAX_BLOCKS_PER_RUN:
+            lowest_existing = min(existing_blocks)
+            for block_num in range(lowest_existing - 1, lowest_existing - 20, -1):
+                if block_num >= 0 and block_num not in existing_blocks:
+                    blocks_to_parse.append(block_num)
+                if len(blocks_to_parse) >= MAX_BLOCKS_PER_RUN:
+                    break
     
     if not blocks_to_parse:
         print("No new blocks to parse")
         return 0
     
-    print(f"\nFound {len(blocks_to_parse)} new blocks to parse")
-    print(f"Will parse: {blocks_to_parse[:MAX_BLOCKS_PER_RUN]}")
+    # Sort blocks to parse (highest first)
+    blocks_to_parse = sorted(blocks_to_parse, reverse=True)[:MAX_BLOCKS_PER_RUN]
+    
+    print(f"\nFound {len(blocks_to_parse)} blocks to parse")
+    print(f"Will parse: {blocks_to_parse}")
     
     # Parse blocks
     parsed_files = []
-    for block_num in blocks_to_parse[:MAX_BLOCKS_PER_RUN]:
+    for block_num in blocks_to_parse:
         filepath = parse_single_block(block_num, rpc_url, OUTPUT_DIR)
         if filepath:
             parsed_files.append(filepath)
@@ -235,6 +281,8 @@ def main():
         "parsed_blocks": [int(f.stem.split("_")[0]) for f in parsed_files],
         "total_parsed": len(parsed_files),
         "latest_block": latest_block,
+        "highest_existing": max(existing_blocks) if existing_blocks else None,
+        "total_existing": len(existing_blocks),
         "timestamp": int(time.time())
     }
     
