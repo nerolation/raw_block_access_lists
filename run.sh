@@ -8,11 +8,12 @@ python parse_and_push.py
 
 # Check if there are new files
 if [ -d "output" ] && [ "$(ls -A output/*.ssz 2>/dev/null)" ]; then
-    echo "Moving files to repository root..."
-    mv output/*.ssz .
+    echo "Moving files to bals directory..."
+    mkdir -p bals
+    mv output/*.ssz bals/
     
     echo "Committing and pushing to GitHub..."
-    git add -f *.ssz
+    git add -f bals/*.ssz
     git commit -m "Add BAL blocks $(date +'%Y-%m-%d %H:%M:%S UTC')"
     git push
     

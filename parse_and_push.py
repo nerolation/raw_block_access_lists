@@ -65,8 +65,8 @@ def get_existing_blocks_from_github() -> Set[int]:
     existing_blocks = set()
     
     try:
-        # GitHub API endpoint for repository contents
-        api_url = f"https://api.github.com/repos/{owner}/{repo}/contents"
+        # GitHub API endpoint for repository contents in bals directory
+        api_url = f"https://api.github.com/repos/{owner}/{repo}/contents/bals"
         
         # Add GitHub token if available for higher rate limits
         headers = {}
@@ -92,11 +92,11 @@ def get_existing_blocks_from_github() -> Set[int]:
             
             print(f"Found {len(existing_blocks)} existing blocks on GitHub")
         else:
-            print(f"GitHub API returned status {response.status_code}")
+            print(f"GitHub API returned status {response.status_code} for bals directory")
             # Fallback: check local git repo if cloned
             if Path(".git").exists():
                 result = subprocess.run(
-                    ["git", "ls-files", "*.ssz"],
+                    ["git", "ls-files", "bals/*.ssz"],
                     capture_output=True,
                     text=True
                 )

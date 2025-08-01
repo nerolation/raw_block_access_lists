@@ -44,16 +44,17 @@ jobs:
           echo "new_files=false" >> $GITHUB_OUTPUT
         fi
         
-    - name: Move files to root
+    - name: Move files to bals directory
       if: steps.check_files.outputs.new_files == 'true'
       run: |
-        mv output/*.ssz . || true
+        mkdir -p bals
+        mv output/*.ssz bals/ || true
         
     - name: Commit and push
       if: steps.check_files.outputs.new_files == 'true'
       run: |
         git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
-        git add -f *.ssz
+        git add -f bals/*.ssz
         git commit -m "Add BAL blocks $(date +'%Y-%m-%d %H:%M:%S UTC')"
         git push
