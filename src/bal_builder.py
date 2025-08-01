@@ -16,10 +16,27 @@ from BALs import *
 from helpers import *
 from helpers import fetch_block_info
 
-rpc_file = os.path.join(project_root, "rpc.txt")
-with open(rpc_file, "r") as file:
-    RPC_URL = file.read().strip()
+def get_rpc_url():
+    """Get RPC URL from environment variable or file."""
+    # First try environment variable
+    rpc_url = os.environ.get("ETH_RPC_URL")
+    if rpc_url:
+        return rpc_url
+    
+    # Fallback to file if it exists
+    rpc_file = os.path.join(project_root, "rpc.txt")
+    if os.path.exists(rpc_file):
+        with open(rpc_file, "r") as file:
+            return file.read().strip()
+    
+    # If running as main script, require RPC URL
+    if __name__ == "__main__":
+        raise ValueError("No RPC URL found. Set ETH_RPC_URL environment variable or create rpc.txt")
+    
+    # Otherwise return None and let caller handle it
+    return None
 
+RPC_URL = get_rpc_url()
 IGNORE_STORAGE_LOCATIONS = False
 
 def extract_balances(state):
@@ -498,6 +515,11 @@ def main():
     
     IGNORE_STORAGE_LOCATIONS = args.no_reads
     
+    # Get RPC URL for main script execution
+    rpc_url = RPC_URL
+    if not rpc_url:
+        raise ValueError("No RPC URL found. Set ETH_RPC_URL environment variable or create rpc.txt")
+    
     print(f"Running EIP-7928 SSZ BAL builder with IGNORE_STORAGE_LOCATIONS = {IGNORE_STORAGE_LOCATIONS}")
     totals = defaultdict(list)
     block_totals = []
@@ -507,18 +529,18 @@ def main():
 
     for block_number in random_blocks:
         print(f"Processing block {block_number}...")
-        trace_result = fetch_block_trace(block_number, RPC_URL)
+        trace_result = fetch_block_trace(block_number, rpc_url)
         
         block_reads = None
         if not IGNORE_STORAGE_LOCATIONS:
             print(f"  Fetching reads for block {block_number}...")
-            block_reads = extract_reads_from_block(block_number, RPC_URL)
+            block_reads = extract_reads_from_block(block_number, rpc_url)
 
         print(f"  Fetching balance touches for block {block_number}...")
-        balance_touches = extract_balance_touches_from_block(block_number, RPC_URL)
+        balance_touches = extract_balance_touches_from_block(block_number, rpc_url)
         
         print(f"  Fetching transaction receipts for block {block_number}...")
-        receipts = fetch_block_receipts(block_number, RPC_URL)
+        receipts = fetch_block_receipts(block_number, rpc_url)
         reverted_tx_indices = set()
         for i, receipt in enumerate(receipts):
             if receipt and receipt.get("status") == "0x0":
@@ -527,7 +549,7 @@ def main():
             print(f"    Found {len(reverted_tx_indices)} reverted transactions: {sorted(reverted_tx_indices)}")
             
         print(f"  Fetching block info...")
-        block_info = fetch_block_info(block_number, RPC_URL)
+        block_info = fetch_block_info(block_number, rpc_url)
 
         builder = BALBuilder()
         
