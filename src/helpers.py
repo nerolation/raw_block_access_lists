@@ -31,6 +31,26 @@ def get_tracer_payload(block_number_hex, diff_mode=True):
     }
 
 
+def get_latest_block_number(rpc_url: str) -> int:
+    """Get the latest block number from the Ethereum node."""
+    payload = {
+        "jsonrpc": "2.0",
+        "method": "eth_blockNumber",
+        "params": [],
+        "id": 1
+    }
+    
+    response = requests.post(rpc_url, json=payload)
+    response.raise_for_status()
+    
+    result = response.json()
+    if "error" in result:
+        raise Exception(f"RPC error: {result['error']}")
+    
+    # Convert hex to int
+    return int(result.get("result", "0x0"), 16)
+
+
 def fetch_block_info(block_number: int, rpc_url: str) -> dict:
     """Fetch block information including transaction receipts"""
     payload = {
