@@ -50,8 +50,8 @@ jobs:
     - name: Commit and push
       if: steps.check_files.outputs.new_files == 'true'
       run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
+        git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
         git add *.ssz
-        git commit -m "Add new BAL files - $(date +'%Y-%m-%d %H:%M:%S')"
+        git commit -m "Add BAL blocks $(date +'%Y-%m-%d %H:%M:%S UTC')"
         git push

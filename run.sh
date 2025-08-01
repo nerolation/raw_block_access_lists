@@ -13,7 +13,7 @@ if [ -d "output" ] && [ "$(ls -A output/*.ssz 2>/dev/null)" ]; then
     
     echo "Committing and pushing to GitHub..."
     git add *.ssz
-    git commit -m "Add new BAL files - $(date +'%Y-%m-%d %H:%M:%S')"
+    git commit -m "Add BAL blocks $(date +'%Y-%m-%d %H:%M:%S UTC')"
     git push
     
     echo "Done! New BAL files pushed to GitHub."
