@@ -32,6 +32,7 @@ from bal_builder import (
 )
 from BALs import BlockAccessList
 import ssz
+import snappy
 from helpers import get_latest_block_number
 
 # Configuration
@@ -170,14 +171,17 @@ def parse_single_block(block_number: int, rpc_url: str, output_dir: Path) -> Opt
         # Encode to SSZ
         encoded = ssz.encode(block_obj_sorted, sedes=BlockAccessList)
         
+        # Compress with snappy
+        compressed = snappy.compress(encoded)
+        
         # Save file
         filename = f"{block_number}_block_access_list_with_reads_eip7928.ssz"
         filepath = output_dir / filename
         
         with open(filepath, "wb") as f:
-            f.write(encoded)
+            f.write(compressed)
         
-        print(f"  Saved: {filename} ({len(encoded)} bytes)")
+        print(f"  Saved: {filename} (SSZ: {len(encoded)} bytes, Compressed: {len(compressed)} bytes)")
         return filepath
         
     except Exception as e:

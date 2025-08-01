@@ -44,7 +44,7 @@ python parse_and_push.py
 ## Configuration
 
 - `MAX_BLOCKS_PER_RUN`: Maximum blocks to parse per run (default: 10)
-- Output files are in SSZ format: `{block_number}_block_access_list_with_reads_eip7928.ssz`
+- Output files are snappy-compressed SSZ format: `{block_number}_block_access_list_with_reads_eip7928.ssz`
 
 ## File Format
 
@@ -54,4 +54,4 @@ The BAL files follow the EIP-7928 specification and include:
 - Nonce changes
 - Code changes
 
-Each file is SSZ-encoded and contains all state changes for the block.
+Each file is SSZ-encoded and then compressed with Snappy for efficient storage.
