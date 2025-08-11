@@ -71,6 +71,62 @@ class BlockAccessList(Serializable):
         ('account_changes', SSZList(AccountChanges, MAX_ACCOUNTS)),
     ]
 
+def bal_to_json(bal: BlockAccessList) -> dict:
+    """Convert a BlockAccessList to JSON-serializable dictionary."""
+    result = {"account_changes": []}
+    
+    for account in bal.account_changes:
+        account_dict = {
+            "address": "0x" + account.address.hex(),
+            "storage_writes": [],
+            "storage_reads": [],
+            "balance_changes": [],
+            "nonce_changes": [],
+            "code_changes": []
+        }
+        
+        # Convert storage writes
+        for storage_access in account.storage_writes:
+            storage_dict = {
+                "slot": "0x" + storage_access.slot.hex(),
+                "changes": []
+            }
+            for change in storage_access.changes:
+                storage_dict["changes"].append({
+                    "tx_index": change.tx_index,
+                    "new_value": "0x" + change.new_value.hex()
+                })
+            account_dict["storage_writes"].append(storage_dict)
+        
+        # Convert storage reads
+        for storage_read in account.storage_reads:
+            account_dict["storage_reads"].append("0x" + storage_read.hex())
+        
+        # Convert balance changes
+        for balance_change in account.balance_changes:
+            account_dict["balance_changes"].append({
+                "tx_index": balance_change.tx_index,
+                "post_balance": "0x" + balance_change.post_balance.hex()
+            })
+        
+        # Convert nonce changes
+        for nonce_change in account.nonce_changes:
+            account_dict["nonce_changes"].append({
+                "tx_index": nonce_change.tx_index,
+                "new_nonce": nonce_change.new_nonce
+            })
+        
+        # Convert code changes
+        for code_change in account.code_changes:
+            account_dict["code_changes"].append({
+                "tx_index": code_change.tx_index,
+                "new_code": "0x" + bytes(code_change.new_code).hex()
+            })
+        
+        result["account_changes"].append(account_dict)
+    
+    return result
+
 class BALBuilder:
     """Builder for constructing BlockAccessList efficiently."""
     

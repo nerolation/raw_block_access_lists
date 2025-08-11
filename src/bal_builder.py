@@ -568,18 +568,20 @@ def main():
         block_obj = builder.build(ignore_reads=IGNORE_STORAGE_LOCATIONS)
         block_obj_sorted = sort_block_access_list(block_obj)
         
-        full_block_encoded = ssz.encode(block_obj_sorted, sedes=BlockAccessList)
-
- 
-        bal_raw_dir = os.path.join(project_root, "bal_raw", "ssz")
+        # Convert to JSON format
+        from BALs import bal_to_json
+        json_data = bal_to_json(block_obj_sorted)
+        
+        # Save as JSON instead of SSZ
+        bal_raw_dir = os.path.join(project_root, "bal_raw", "json")
         os.makedirs(bal_raw_dir, exist_ok=True)
         
         reads_suffix = "without_reads" if IGNORE_STORAGE_LOCATIONS else "with_reads"
-        filename = f"{block_number}_block_access_list_{reads_suffix}_eip7928.txt"
+        filename = f"{block_number}_block_access_list_{reads_suffix}_eip7928.json"
         filepath = os.path.join(bal_raw_dir, filename)
         
-        with open(filepath, "wb") as f:
-            f.write(full_block_encoded)
+        with open(filepath, "w") as f:
+            json.dump(json_data, f, indent=2)
 
         component_sizes = get_component_sizes(block_obj_sorted)
 
@@ -606,7 +608,7 @@ def main():
         block_totals.append(component_sizes["total_kb"])
 
     filename = "bal_analysis_without_reads_eip7928.json" if IGNORE_STORAGE_LOCATIONS else "bal_analysis_with_reads_eip7928.json"
-    filepath = os.path.join(project_root, "bal_raw", "ssz", filename)
+    filepath = os.path.join(project_root, "bal_raw", "json", filename)
     with open(filepath, "w") as f:
         json.dump(data, f, indent=2)
 

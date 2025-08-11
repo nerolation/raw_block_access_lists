@@ -30,9 +30,8 @@ from bal_builder import (
     sort_block_access_list,
     to_canonical_address
 )
-from BALs import BlockAccessList
+from BALs import BlockAccessList, bal_to_json
 import ssz
-import snappy
 from helpers import get_latest_block_number
 
 # Configuration
@@ -80,9 +79,9 @@ def get_existing_blocks_from_github() -> Set[int]:
             files = response.json()
             
             # Parse block numbers from filenames
-            # Expected format: BLOCKNUMBER_block_access_list_with_reads_eip7928.ssz
+            # Expected format: BLOCKNUMBER_block_access_list_with_reads_eip7928.json
             for file_info in files:
-                if isinstance(file_info, dict) and file_info.get("name", "").endswith(".ssz"):
+                if isinstance(file_info, dict) and file_info.get("name", "").endswith(".json"):
                     filename = file_info["name"]
                     try:
                         block_num = int(filename.split("_")[0])
@@ -96,7 +95,7 @@ def get_existing_blocks_from_github() -> Set[int]:
             # Fallback: check local git repo if cloned
             if Path(".git").exists():
                 result = subprocess.run(
-                    ["git", "ls-files", "bals/*.ssz"],
+                    ["git", "ls-files", "bals/*.json"],
                     capture_output=True,
                     text=True
                 )
@@ -116,7 +115,7 @@ def get_existing_blocks_from_github() -> Set[int]:
     return existing_blocks
 
 def parse_single_block(block_number: int, rpc_url: str, output_dir: Path) -> Optional[Path]:
-    """Parse a single block and save as SSZ file."""
+    """Parse a single block and save as JSON file."""
     print(f"\nParsing block {block_number}...")
     
     try:
@@ -168,20 +167,17 @@ def parse_single_block(block_number: int, rpc_url: str, output_dir: Path) -> Opt
         block_obj = builder.build(ignore_reads=False)
         block_obj_sorted = sort_block_access_list(block_obj)
         
-        # Encode to SSZ
-        encoded = ssz.encode(block_obj_sorted, sedes=BlockAccessList)
+        # Convert to JSON
+        json_data = bal_to_json(block_obj_sorted)
         
-        # Compress with snappy
-        compressed = snappy.compress(encoded)
-        
-        # Save file
-        filename = f"{block_number}_block_access_list_with_reads_eip7928.ssz"
+        # Save as JSON file
+        filename = f"{block_number}_block_access_list_with_reads_eip7928.json"
         filepath = output_dir / filename
         
-        with open(filepath, "wb") as f:
-            f.write(compressed)
+        with open(filepath, "w") as f:
+            json.dump(json_data, f, indent=2)
         
-        print(f"  Saved: {filename} (SSZ: {len(encoded)} bytes, Compressed: {len(compressed)} bytes)")
+        print(f"  Saved: {filename} (JSON format)")
         return filepath
         
     except Exception as e:
