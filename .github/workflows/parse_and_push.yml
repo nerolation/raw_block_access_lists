@@ -50,11 +50,27 @@ jobs:
         mkdir -p bals
         mv output/*.json bals/ || true
         
+    - name: Cleanup old files
+      if: steps.check_files.outputs.new_files == 'true'
+      run: |
+        echo "Running cleanup to maintain only latest 7200 files..."
+        python cleanup_old_bals.py
+        
     - name: Commit and push
       if: steps.check_files.outputs.new_files == 'true'
       run: |
         git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
+        # Add new files
         git add -f bals/*.json
-        git commit -m "Add BAL blocks $(date +'%Y-%m-%d %H:%M:%S UTC')"
+        # Also stage deletions from cleanup
+        git add -A bals/
+        # Get counts for commit message  
+        NEW_COUNT=$(find output -name "*.json" 2>/dev/null | wc -l || echo "0")
+        TOTAL_COUNT=$(find bals -name "*.json" 2>/dev/null | wc -l || echo "0")
+        git commit -m "Add BAL blocks and cleanup old files
+        
+        Added: $NEW_COUNT new blocks
+        Total files: $TOTAL_COUNT (max 7200)
+        Timestamp: $(date +'%Y-%m-%d %H:%M:%S UTC')" || echo "No changes to commit"
         git push
