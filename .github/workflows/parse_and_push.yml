@@ -38,7 +38,7 @@ jobs:
     - name: Check for new files
       id: check_files
       run: |
-        if [ -d "output" ] && [ "$(ls -A output/*.ssz 2>/dev/null)" ]; then
+        if [ -d "output" ] && [ "$(ls -A output/*.json 2>/dev/null)" ]; then
           echo "new_files=true" >> $GITHUB_OUTPUT
         else
           echo "new_files=false" >> $GITHUB_OUTPUT
@@ -48,13 +48,13 @@ jobs:
       if: steps.check_files.outputs.new_files == 'true'
       run: |
         mkdir -p bals
-        mv output/*.ssz bals/ || true
+        mv output/*.json bals/ || true
         
     - name: Commit and push
       if: steps.check_files.outputs.new_files == 'true'
       run: |
         git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
-        git add -f bals/*.ssz
+        git add -f bals/*.json
         git commit -m "Add BAL blocks $(date +'%Y-%m-%d %H:%M:%S UTC')"
         git push
